@@ -18,6 +18,7 @@ import io.grpc.Context;
 import io.grpc.ForwardingClientCall.SimpleForwardingClientCall;
 import io.grpc.ForwardingClientCallListener.SimpleForwardingClientCallListener;
 import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
@@ -139,7 +140,9 @@ public class StorageStubProvider {
   private ChannelAndRequestCounter buildManagedChannel() {
     ActiveRequestCounter counter = new ActiveRequestCounter();
     ManagedChannel channel =
-        GoogleDefaultChannelBuilder.forTarget(
+        /*
+        GoogleDefaultChannelBuilder */
+            ManagedChannelBuilder.forTarget(
                 isNullOrEmpty(readOptions.getGrpcServerAddress())
                     ? DEFAULT_GCS_GRPC_SERVER_ADDRESS
                     : readOptions.getGrpcServerAddress())
