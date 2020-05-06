@@ -305,6 +305,10 @@
               <minimizeJar>false</minimizeJar>
               <relocations>
                 <relocation>
+                  <pattern>io.grpc.netty.shaded.io.grpc.netty</pattern>
+                  <shadedPattern>com.google.cloud.hadoop.repackaged.gcs.io.grpc.netty</shadedPattern>
+                </relocation>
+                <relocation>
                   <pattern>com</pattern>
                   <shadedPattern>com.google.cloud.hadoop.repackaged.gcs.com</shadedPattern>
                   <includes>

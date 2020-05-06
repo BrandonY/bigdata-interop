@@ -1415,6 +1415,7 @@ public abstract class GoogleHadoopFileSystemBase extends FileSystem
    */
   private Credential getCredential(Configuration config)
       throws IOException, GeneralSecurityException {
+    if(true) return null;
     Credential credential = null;
 
     // Check if delegation token support is configured

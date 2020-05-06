@@ -128,10 +128,10 @@ public class GoogleCloudStorageFileSystem {
     logger.atFine().log("GoogleCloudStorageFileSystem(options: %s)", options);
     options.throwIfNotValid();
 
-    checkArgument(credential != null, "credential must not be null");
+    //checkArgument(credential != null, "credential must not be null");
 
     this.options = options;
-    this.gcs = new GoogleCloudStorageImpl(options.getCloudStorageOptions(), credential);
+    this.gcs = new GoogleCloudStorageImpl(options.getCloudStorageOptions(), (httpRequest) -> {});
 
     if (options.isPerformanceCacheEnabled()) {
       this.gcs =

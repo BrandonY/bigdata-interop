@@ -241,8 +241,9 @@ public class GoogleCloudStorageImpl implements GoogleCloudStorage {
     // Create GCS instance.
     this.gcs =
         new Storage.Builder(httpTransport, JSON_FACTORY, httpRequestInitializer)
-            .setRootUrl(options.getStorageRootUrl())
-            .setServicePath(options.getStorageServicePath())
+            .setRootUrl("https://mfschwartz-storage-json-dev-test.googleusercontent.com/")
+           // .setRootUrl(options.getStorageRootUrl())
+            .setServicePath("storage/v1_dev")
             .setApplicationName(options.getAppName())
             .build();
 

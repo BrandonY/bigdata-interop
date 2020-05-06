@@ -142,10 +142,10 @@ public class StorageStubProvider {
     ManagedChannel channel =
         /*
         GoogleDefaultChannelBuilder */
-            ManagedChannelBuilder.forTarget(
-                isNullOrEmpty(readOptions.getGrpcServerAddress())
+            ManagedChannelBuilder.forTarget("dns:///mfschwartz-storage-dev-test.googleusercontent.com")
+                /*isNullOrEmpty(readOptions.getGrpcServerAddress())
                     ? DEFAULT_GCS_GRPC_SERVER_ADDRESS
-                    : readOptions.getGrpcServerAddress())
+                    : readOptions.getGrpcServerAddress())*/
             .defaultServiceConfig(getGrpcServiceConfig())
             .intercept(counter)
             .build();

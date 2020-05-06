@@ -64,9 +64,9 @@ public final class GoogleCloudStorageGrpcWriteChannel
   // Default GCS upload granularity.
   static final int GCS_MINIMUM_CHUNK_SIZE = 256 * 1024;
 
-  private static final Duration START_RESUMABLE_WRITE_TIMEOUT = Duration.ofSeconds(10);
-  private static final Duration QUERY_WRITE_STATUS_TIMEOUT = Duration.ofSeconds(10);
-  private static final Duration WRITE_STREAM_TIMEOUT = Duration.ofSeconds(20);
+  private static final Duration START_RESUMABLE_WRITE_TIMEOUT = Duration.ofSeconds(1000);
+  private static final Duration QUERY_WRITE_STATUS_TIMEOUT = Duration.ofSeconds(1000);
+  private static final Duration WRITE_STREAM_TIMEOUT = Duration.ofSeconds(1000);
   // Maximum number of automatic retries for each data chunk
   // when writing to underlying channel raises error.
   private static final int WRITE_CHUNK_RETRIES = 10;

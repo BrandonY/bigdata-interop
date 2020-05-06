@@ -69,10 +69,10 @@ public abstract class GoogleCloudStorageOptions {
   public static final int MAX_HTTP_REQUEST_RETRIES = 10;
 
   /** Default setting for connect timeout (in millisecond) of GCS HTTP request. */
-  public static final int HTTP_REQUEST_CONNECT_TIMEOUT = 20 * 1000;
+  public static final int HTTP_REQUEST_CONNECT_TIMEOUT = 200 * 1000;
 
   /** Default setting for read timeout (in millisecond) of GCS HTTP request. */
-  public static final int HTTP_REQUEST_READ_TIMEOUT = 20 * 1000;
+  public static final int HTTP_REQUEST_READ_TIMEOUT = 600 * 1000;
 
   /** Default setting for whether or not to use rewrite request for copy operation. */
   public static final boolean COPY_WITH_REWRITE_DEFAULT = false;
