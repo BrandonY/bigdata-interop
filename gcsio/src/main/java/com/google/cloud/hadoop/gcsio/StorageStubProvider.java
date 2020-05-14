@@ -139,6 +139,7 @@ public class StorageStubProvider {
 
   private ChannelAndRequestCounter buildManagedChannel() {
     ActiveRequestCounter counter = new ActiveRequestCounter();
+    System.err.println("Providing Mike's sandman");
     ManagedChannel channel =
         /*
         GoogleDefaultChannelBuilder */
