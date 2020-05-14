@@ -13,6 +13,8 @@
  */
 package com.google.cloud.hadoop.gcsio;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
 import com.google.cloud.hadoop.gcsio.GoogleCloudStorageReadOptions.Fadvise;
 import com.google.common.base.Preconditions;
 import com.google.common.flogger.GoogleLogger;
@@ -35,14 +37,13 @@ import java.nio.channels.SeekableByteChannel;
 import java.time.Duration;
 import java.util.Iterator;
 import java.util.OptionalInt;
-import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 
 public class GoogleCloudStorageGrpcReadChannel implements SeekableByteChannel {
 
   private static final GoogleLogger logger = GoogleLogger.forEnclosingClass();
 
-  private static final Duration READ_STREAM_TIMEOUT = Duration.ofSeconds(20);
+  private static final Duration READ_STREAM_TIMEOUT = Duration.ofMinutes(20);
 
   // Context of the request that returned resIterator.
   @Nullable CancellableContext requestContext;
@@ -107,7 +108,7 @@ public class GoogleCloudStorageGrpcReadChannel implements SeekableByteChannel {
     try {
       // TODO(b/151184800): Implement per-message timeout, in addition to stream timeout.
       getObjectResult =
-          stub.withDeadlineAfter(READ_STREAM_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
+          stub.withDeadlineAfter(READ_STREAM_TIMEOUT.toMillis(), MILLISECONDS)
               .getObject(
                   GetObjectRequest.newBuilder()
                       .setBucket(bucketName)
@@ -161,6 +162,7 @@ public class GoogleCloudStorageGrpcReadChannel implements SeekableByteChannel {
     // Handle skipping forward through the buffer for a seek.
     long bufferSkip =
         Math.min(bufferedContent.size() - bufferedContentReadOffset, bytesToSkipBeforeReading);
+    bufferSkip = Math.max(0, bufferSkip);
     bufferedContentReadOffset += bufferSkip;
     bytesToSkipBeforeReading -= bufferSkip;
     int remainingBufferedBytes = bufferedContent.size() - bufferedContentReadOffset;
@@ -187,8 +189,8 @@ public class GoogleCloudStorageGrpcReadChannel implements SeekableByteChannel {
   @Override
   public int read(ByteBuffer byteBuffer) throws IOException {
     logger.atFine().log(
-        "GCS gRPC read request for up to %d bytes, from object at offset %d",
-        byteBuffer.remaining(), position());
+        "GCS gRPC read request for up to %d bytes at offset %d from object %s",
+        byteBuffer.remaining(), position(), objectName);
 
     if (!isOpen()) {
       throw new ClosedChannelException();
@@ -199,7 +201,7 @@ public class GoogleCloudStorageGrpcReadChannel implements SeekableByteChannel {
     // The server responds in 2MB chunks, but the client can ask for less than that. We store the
     // remainder in bufferedContent and return pieces of that on the next read call (and flush
     // that buffer if there is a seek).
-    if (bufferedContent != null) {
+    if (bufferedContent != null && readStrategy != Fadvise.RANDOM) {
       bytesRead += readBufferedContentInto(byteBuffer);
     }
     if (!byteBuffer.hasRemaining()) {
@@ -283,6 +285,10 @@ public class GoogleCloudStorageGrpcReadChannel implements SeekableByteChannel {
   }
 
   private void cancelCurrentRequest() {
+    bufferedContent = null;
+    bufferedContentReadOffset = 0;
+    bytesToSkipBeforeReading = 0;
+
     if (requestContext != null) {
       requestContext.close();
       requestContext = null;
@@ -295,12 +301,16 @@ public class GoogleCloudStorageGrpcReadChannel implements SeekableByteChannel {
   /**
    * Waits until more data is available from the server, or returns false if read is done.
    *
-   * @return true iff more data is available with .next()
+   * @return true if more data is available with .next()
    * @throws IOException of the appropriate type if there was an I/O error.
    */
   private boolean moreServerContent() throws IOException {
     try {
-      return resIterator.hasNext();
+      boolean moreDataAvailable = resIterator.hasNext();
+      if (!moreDataAvailable) {
+        cancelCurrentRequest();
+      }
+      return moreDataAvailable;
     } catch (StatusRuntimeException e) {
       cancelCurrentRequest();
       throw convertError(e, bucketName, objectName);
@@ -344,29 +354,22 @@ public class GoogleCloudStorageGrpcReadChannel implements SeekableByteChannel {
 
     long seekDistance = newPosition - position;
 
+    if (seekDistance >= 0 && seekDistance <= readOptions.getInplaceSeekLimit()) {
+      bytesToSkipBeforeReading = seekDistance;
+      return this;
+    }
+
     if (readStrategy == Fadvise.AUTO) {
       if (seekDistance < 0 || seekDistance > readOptions.getInplaceSeekLimit()) {
         readStrategy = Fadvise.RANDOM;
       }
     }
 
-    if (seekDistance > 0 && seekDistance <= readOptions.getInplaceSeekLimit()) {
-      bytesToSkipBeforeReading = seekDistance;
-      return this;
-    }
-
     // Reset any ongoing read operations or local data caches.
     cancelCurrentRequest();
-    this.bufferedContent = null;
-    this.bufferedContentReadOffset = 0;
-    this.bytesToSkipBeforeReading = 0;
 
-    this.position = newPosition;
+    position = newPosition;
     return this;
-  }
-
-  private long getObjectSize() {
-    return objectSize;
   }
 
   @Override

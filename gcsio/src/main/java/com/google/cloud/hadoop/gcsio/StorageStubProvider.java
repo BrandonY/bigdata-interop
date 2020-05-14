@@ -147,6 +147,7 @@ public class StorageStubProvider {
                 /*isNullOrEmpty(readOptions.getGrpcServerAddress())
                     ? DEFAULT_GCS_GRPC_SERVER_ADDRESS
                     : readOptions.getGrpcServerAddress())*/
+            .enableRetry()
             .defaultServiceConfig(getGrpcServiceConfig())
             .intercept(counter)
             .build();
@@ -189,10 +190,11 @@ public class StorageStubProvider {
             .put("maxAttempts", GRPC_MAX_RETRY_ATTEMPTS)
             .put(
                 "initialBackoff",
-                Durations.fromMillis(readOptions.getBackoffInitialIntervalMillis()).toString())
+                Durations.toString(
+                    Durations.fromMillis(readOptions.getBackoffInitialIntervalMillis())))
             .put(
                 "maxBackoff",
-                Durations.fromMillis(readOptions.getBackoffMaxIntervalMillis()).toString())
+                Durations.toString(Durations.fromMillis(readOptions.getBackoffMaxIntervalMillis())))
             .put("backoffMultiplier", readOptions.getBackoffMultiplier())
             .put("retryableStatusCodes", ImmutableList.of("UNAVAILABLE", "RESOURCE_EXHAUSTED"))
             .build();
